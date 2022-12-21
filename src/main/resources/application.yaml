@@ -1,0 +1,53 @@
+server:
+  port: 1313
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    tk.mybatis: DEBUG
+    org.springframework: WARN
+
+spring:
+  security:
+    
+  application:
+    name: bgm-service
+  jackson:
+    time-zone: Asia/Shanghai
+    serialization:
+      # Date返回前端转时间戳 但不能解决LocalDateTime转时间戳（JacksonCustomizerConfig类解决）
+      write-dates-as-timestamps: true
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: root
+    username: root
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+#  redis:
+#  ##    cluster:
+#  ##      nodes: redis://121.43.163.177:6379,redis://121.43.163.177:6380,redis://121.43.163.177:6381,redis://121.43.163.177:6382,redis://121.43.163.177:6383,redis://121.43.163.177:6384
+#      host: 121.43.163.177
+#      port: 6379
+#      password: root123.
+#      timeout: 5000
+  servlet:
+    #文件上传限制
+    multipart:
+      enabled: true
+      max-file-size: 2MB
+      max-request-size: 10MB
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+mybatis-plus:
+  mapper-locations: classpath:com.lengao.auth.mapper/**/*.xml
+  type-aliases-package: com.lengao.auth.po
+  configuration:
+    auto-mapping-behavior: full
+    map-underscore-to-camel-case: true
+
+mapper:
+  not-empty: false
+  identity: MYSQL
+

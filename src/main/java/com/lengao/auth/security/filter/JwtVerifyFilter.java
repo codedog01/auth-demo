@@ -1,4 +1,4 @@
-package com.lengao.auth.filter;
+package com.lengao.auth.security.filter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Component
+//@Component
 public class JwtVerifyFilter extends BasicAuthenticationFilter {
 
    @Autowired
@@ -35,6 +35,14 @@ public class JwtVerifyFilter extends BasicAuthenticationFilter {
     public JwtVerifyFilter(AuthenticationManager authenticationManager) {
         super(authenticationManager);
     }
+
+    public JwtVerifyFilter(AuthenticationManager authenticationManager, HandlerExceptionResolver handlerExceptionResolver, RedissonClient redissonClient) {
+        super(authenticationManager);
+        this.handlerExceptionResolver = handlerExceptionResolver;
+        this.redissonClient = redissonClient;
+    }
+
+
 
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws IOException, ServletException {

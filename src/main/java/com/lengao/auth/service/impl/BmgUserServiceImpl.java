@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -71,20 +72,19 @@ public class BmgUserServiceImpl extends ServiceImpl<BmgUserMapper, BmgUser> impl
         if (bmgUser == null) {
             return bmgRoles;
         }
-        userRoleMapper.selectList(new LambdaQueryWrapper<BmgUserRole>().eq(BmgUserRole::getUserId, bmgUser.getId())).stream().map(BmgUserRole::getRoleId).collect(Collectors.collectingAndThen(Collectors.toSet(), roleIds -> {
+        return userRoleMapper.selectList(new LambdaQueryWrapper<BmgUserRole>().eq(BmgUserRole::getUserId, bmgUser.getId())).stream().map(BmgUserRole::getRoleId).collect(Collectors.collectingAndThen(Collectors.toSet(), roleIds -> {
             if (roleIds.isEmpty()) {
                 return bmgRoles;
             }
             return roleMapper.selectList(new LambdaQueryWrapper<BmgRole>().in(BmgRole::getId, roleIds));
 
         }));
-        return bmgRoles;
     }
 
     @Override
     public List<BmgUrl> getUrlsByUsername(String username) {
         ArrayList<BmgUrl> bmgUrls = new ArrayList<>();
-        getRolesByUsername(username).stream().map(BmgRole::getId).collect(Collectors.collectingAndThen(Collectors.toSet(), roleIds -> {
+        return getRolesByUsername(username).stream().map(BmgRole::getId).collect(Collectors.collectingAndThen(Collectors.toSet(), roleIds -> {
             if (roleIds.isEmpty()) {
                 return bmgUrls;
             }
@@ -94,10 +94,10 @@ public class BmgUserServiceImpl extends ServiceImpl<BmgUserMapper, BmgUser> impl
                         if (urlIds.isEmpty()) {
                             return bmgUrls;
                         }
-                        return new HashSet<>(urlMapper.selectList(new LambdaQueryWrapper<BmgUrl>().in(BmgUrl::getId, urlIds)));
+                        return urlMapper.selectList(new LambdaQueryWrapper<BmgUrl>().in(BmgUrl::getId, urlIds)).stream().collect(Collectors.toList());
                     }));
+
         }));
-        return bmgUrls;
     }
 
 }

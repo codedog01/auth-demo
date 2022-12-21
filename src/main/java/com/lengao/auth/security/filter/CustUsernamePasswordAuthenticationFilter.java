@@ -1,4 +1,4 @@
-package com.lengao.auth.filter;
+package com.lengao.auth.security.filter;
 
 import com.lengao.auth.config.BusinessException;
 import com.lengao.auth.utils.JwtUtils;
@@ -21,10 +21,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Component
+
+
+/**
+ * 不注入到IOC容器当中，否则的话会由Spring管理一份，springsecurity过滤器链中又有一份，导致过滤器走两边
+ * 这个方法的报错可以单独用一个类来处理,并在安全配置中添加即可
+ * @See CustomAuthenticationEntryPoint
+ */
+//@Component
 @Slf4j
 public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
-
+/*TODO： */
     @Autowired
     HandlerExceptionResolver handlerExceptionResolver;
 
@@ -34,9 +41,14 @@ public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthentica
     private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
     private boolean postOnly = true;
 
-    public CustUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager) {
+//    public CustUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager) {
+//        super(new AntPathRequestMatcher("/auth/login", "POST"));
+//        this.setAuthenticationManager( authenticationManager);
+//    }
+    public CustUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager,HandlerExceptionResolver handlerExceptionResolver) {
         super(new AntPathRequestMatcher("/auth/login", "POST"));
         this.setAuthenticationManager( authenticationManager);
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
@@ -44,24 +56,24 @@ public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthentica
         if (postOnly && !request.getMethod().equals("POST")) {
             throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
         }
-        String username = obtainUsername(request);
-        String password = obtainPassword(request);
-
-        UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(username, password);
-
-        // Allow subclasses to set the "details" property
-        setDetails(request, authRequest);
 
         Authentication authentication = null;
         try {
+            String username = obtainUsername(request);
+            String password = obtainPassword(request);
+
+            UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(username, password);
+
+            // Allow subclasses to set the "details" property
+            setDetails(request, authRequest);
             authentication = super.getAuthenticationManager().authenticate(authRequest);
         } catch (Exception e) {
             BusinessException exception = new BusinessException("账号或密码错误");
             handlerExceptionResolver.resolveException(request, response, null, exception);
             return null;
         }
-        String jwtToken = JwtUtils.getJwtToken(authentication, 60 * 6 * 1000);
-        response.addHeader("Authorization", jwtToken);
+//        String jwtToken = JwtUtils.getJwtToken(authentication, 60 * 6 * 1000);
+//        response.addHeader("Authorization", jwtToken);
         return authentication;
     }
 

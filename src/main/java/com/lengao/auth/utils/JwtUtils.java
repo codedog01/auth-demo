@@ -6,10 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
@@ -37,15 +34,15 @@ public class JwtUtils {
      * @return
      */
     @SneakyThrows
-    public static String getJwtToken(Authentication authentication, int expire) {
-        String name = authentication.getName();
-        List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+    public static String getJwtToken(String name, int expire) {
+//        String name = authentication.getName();
+//        List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
         Calendar instance = Calendar.getInstance();
         instance.add(Calendar.MILLISECOND, expire); //设置过期时间
         return JWT.create()
                 .withIssuedAt(new Date())
                 .withClaim("username", name)
-                .withClaim("roles", roles)
+//                .withClaim("roles", roles)
                 .withExpiresAt(instance.getTime()) //指定令牌的过期时间
                 .sign(Algorithm.HMAC256(SECRET));
     }
@@ -76,11 +73,12 @@ public class JwtUtils {
      *
      * @Param request
      */
-    public static User getUserByJwtToken(HttpServletRequest request) throws JsonProcessingException {
+    public static String getUseNameByJwtToken(HttpServletRequest request) throws JsonProcessingException {
         String token = request.getHeader("token");
         DecodedJWT decode = JWT.decode(token);
         String username = decode.getClaim("username").asString();
-        Set<SimpleGrantedAuthority> roles = decode.getClaim("roles").asList(String.class).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
-        return new User(username, "", roles);
+//        Set<SimpleGrantedAuthority> roles = decode.getClaim("roles").asList(String.class).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toSet());
+//        new User(username, "", roles);
+        return username;
     }
 }

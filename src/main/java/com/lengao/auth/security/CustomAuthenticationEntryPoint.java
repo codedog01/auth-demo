@@ -24,7 +24,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     HandlerExceptionResolver handlerExceptionResolver;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException){
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) {
         BusinessException exception = new BusinessException(401, "未登录");
         handlerExceptionResolver.resolveException(request, response, null, exception);
     }

@@ -1,10 +1,9 @@
 package com.lengao.auth.config;
 
-import com.lengao.auth.security.filter.CustUsernamePasswordAuthenticationFilter;
-import com.lengao.auth.security.filter.JwtVerifyFilter;
 import com.lengao.auth.security.CustomAuthenticationEntryPoint;
 import com.lengao.auth.security.UserAuthAccessDeniedHandler;
-import org.redisson.api.RedissonClient;
+import com.lengao.auth.security.filter.CustUsernamePasswordAuthenticationFilter;
+import com.lengao.auth.security.filter.JwtVerifyFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +42,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    //安全认证管理
     @Bean
     AuthenticationManager authenticationManager(HttpSecurity httpSecurity, UserDetailsService UserDetailsServiceImpl) throws Exception {
 
@@ -54,37 +53,38 @@ public class SecurityConfig {
                 .build();
     }
 
+    //过滤器链配置
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
-                                                   AuthenticationManager authenticationManager,
-                                                   HandlerExceptionResolver handlerExceptionResolver,
+                                                   CustUsernamePasswordAuthenticationFilter custUsernamePasswordAuthenticationFilter,
                                                    UserAuthAccessDeniedHandler userAuthAccessDeniedHandler,
-                                                   RedissonClient redissonClient,
+                                                   JwtVerifyFilter jwtVerifyFilter,
                                                    CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
-
         httpSecurity.formLogin().disable();
-        httpSecurity.addFilterAt(new CustUsernamePasswordAuthenticationFilter(authenticationManager, handlerExceptionResolver), UsernamePasswordAuthenticationFilter.class);
+        // 将我们自定义的UsernamePasswordAuthenticationFilter代替原来的
+        httpSecurity.addFilterAt(custUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);//登录校验
+        // 在认证前校验token信息，并将认证后的用户信息放入上下文中
+        httpSecurity.addFilterBefore(jwtVerifyFilter, UsernamePasswordAuthenticationFilter.class);//接口 token校验
+
         httpSecurity.csrf().disable()
                 .authorizeRequests()
-
                 //放通所有静态资源
                 .antMatchers(loadExcludePath()).permitAll()
                 //放通注册
                 .antMatchers("/auth/register", "/auth/login").permitAll()
-                .antMatchers("/auth/test").hasAnyAuthority("ADMIN")
+                .antMatchers("/auth/test").hasRole("ADMIN")
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 .antMatchers("/logger/**").hasAnyRole("ADMIN", "LOGGER")
                 //其余请求都需要认证后访问
                 .anyRequest()
                 .authenticated()
                 .and()
-                .addFilter(new JwtVerifyFilter(authenticationManager, handlerExceptionResolver,redissonClient))
                 //已认证但是权限不够
                 .exceptionHandling().accessDeniedHandler(userAuthAccessDeniedHandler)
                 .and()
-//                //未能通过认证，也就是未登录
-//                .exceptionHandling().authenticationEntryPoint(customAuthenticationEntryPoint)
-//                .and()
+                //未能通过认证，也就是未登录
+                .exceptionHandling().authenticationEntryPoint(customAuthenticationEntryPoint)
+                .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);//禁用session
         return httpSecurity.build();
     }

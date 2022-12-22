@@ -24,13 +24,7 @@ spring:
     password: root
     username: root
     url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
-#  redis:
-#  ##    cluster:
-#  ##      nodes: redis://121.43.163.177:6379,redis://121.43.163.177:6380,redis://121.43.163.177:6381,redis://121.43.163.177:6382,redis://121.43.163.177:6383,redis://121.43.163.177:6384
-#      host: 121.43.163.177
-#      port: 6379
-#      password: root123.
-#      timeout: 5000
+
   servlet:
     #文件上传限制
     multipart:

@@ -3,6 +3,8 @@ package com.lengao.auth.security.filter;
 import com.lengao.auth.config.BusinessException;
 import com.lengao.auth.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RMap;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -14,6 +16,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import javax.servlet.*;
@@ -28,24 +31,22 @@ import java.io.IOException;
  * 这个方法的报错可以单独用一个类来处理,并在安全配置中添加即可
  * @See CustomAuthenticationEntryPoint
  */
-//@Component
+@Component
 @Slf4j
-public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
-/*TODO： */
+public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthenticationProcessingFilter{
     @Autowired
     HandlerExceptionResolver handlerExceptionResolver;
-
+    @Autowired
+    RedissonClient redissonClient;
     public static final String SPRING_SECURITY_FORM_USERNAME_KEY = "username";
     public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "password";
     private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
     private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
     private boolean postOnly = true;
 
-//    public CustUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager) {
-//        super(new AntPathRequestMatcher("/auth/login", "POST"));
-//        this.setAuthenticationManager( authenticationManager);
-//    }
+
     public CustUsernamePasswordAuthenticationFilter(AuthenticationManager authenticationManager,HandlerExceptionResolver handlerExceptionResolver) {
+        // 自定义登录接口地址
         super(new AntPathRequestMatcher("/auth/login", "POST"));
         this.setAuthenticationManager( authenticationManager);
         this.handlerExceptionResolver = handlerExceptionResolver;
@@ -80,7 +81,10 @@ public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthentica
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        String jwtToken = JwtUtils.getJwtToken(authResult, 60 * 6 * 1000);
+        RMap<String, Authentication> token = redissonClient.getMap("token");
+
+        String jwtToken = JwtUtils.getJwtToken(authResult.getName(), 60 * 6 * 1000);
+        token.put(authResult.getName(), authResult);
         response.addHeader("Authorization", jwtToken);
         chain.doFilter(request, response);
 //        super.successfulAuthentication(request, response, chain, authResult);
@@ -124,8 +128,5 @@ public class CustUsernamePasswordAuthenticationFilter extends AbstractAuthentica
     public final String getPasswordParameter() {
         return passwordParameter;
     }
-
-
-
 
 }

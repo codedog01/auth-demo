@@ -19,8 +19,8 @@ public class RedissonConfig extends CachingConfigurerSupport {
         config.setTransportMode(TransportMode.NIO);
         SingleServerConfig singleServerConfig = config.useSingleServer();
         //可以用"rediss://"来启用SSL连接
-        singleServerConfig.setAddress("redis://121.43.163.177:6277");
-        singleServerConfig.setPassword("root123.");
+        singleServerConfig.setAddress("redis://");
+        singleServerConfig.setPassword("");
         RedissonClient redisson = Redisson.create(config);
         return redisson;
     }
